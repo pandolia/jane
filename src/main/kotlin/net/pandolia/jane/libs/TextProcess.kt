@@ -40,19 +40,27 @@ object Markdown {
     private val mdParser = Parser.builder(mdOptions).build()
     private val mdRenderer = HtmlRenderer.builder(mdOptions).build()
 
-    fun md2html(md: String) =  mdRenderer.render(mdParser.parse(md))
+    fun md2html(md: String): String = mdRenderer.render(mdParser.parse(md))
 }
 
-fun ByteArray.toHex(): String {
-    return joinToString("") { "%02x".format(it) }
-}
+fun ByteArray.toHex() = joinToString("") { "%02x".format(it) }
 
 @Suppress("unused")
-fun String.md5(): String {
-    return MessageDigest.getInstance("MD5").digest(this.toByteArray()).toHex()
-}
+fun String.md5() =  MessageDigest.getInstance("MD5").digest(this.toByteArray()).toHex()
 
 @Suppress("unused")
-fun String.toCapital(): String {
-    return this.split('-').joinToString(" ") { it.capitalize() }
+fun String.toCapital() = split('-').joinToString(" ") { it.capitalize() }
+
+@Suppress("unused")
+val String.packValue get() = replace(' ', '-').toLowerCase()
+
+fun String.parseToDict(): Map<String, String> {
+    return split('\n')
+        .map { it.trim() }
+        .filter { !it.startsWith('#') && it.contains(':') }
+        .map { line ->
+            val i = line.indexOf(':')
+            Pair(line.substring(0, i).trim(), line.substring(i + 1).trim())
+        }
+        .toMap()
 }

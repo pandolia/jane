@@ -20,6 +20,8 @@ class Page(val page_name: String) {
     var category: String = ""
     var content: String = ""
 
+    val category_id get() = category.packValue
+
     init {
         page_path = "$pageDir/$page_name.md"
         target_path = "$buildDir/$page_name.html"
@@ -31,7 +33,7 @@ class Page(val page_name: String) {
             create_date = "${page_name.substring(0, 4)}-${page_name.substring(5, 10)}"
         } else {
             is_article = false
-            template_path = if (isFile("$templateDir/$page_name.mustache")) {
+            template_path = if (Fs.isFile("$templateDir/$page_name.mustache")) {
                 "$templateDir/$page_name.mustache"
             } else {
                 "$templateDir/default.mustache"
@@ -40,7 +42,7 @@ class Page(val page_name: String) {
             create_date = ""
         }
 
-        if (!isFile(template_path)) {
+        if (!Fs.isFile(template_path)) {
             Proc.abort("Template file $template_path for $page_path does not exist")
         }
 
@@ -48,7 +50,7 @@ class Page(val page_name: String) {
     }
 
     fun readProps(): Boolean {
-        val text = tryGet("Read $page_path") { readFile(page_path).trim() } ?: return false
+        val text = Try.get("Read $page_path") { Fs.readFile(page_path).trim() } ?: return false
 
         val pagePropsMarker = "---"
         val n = pagePropsMarker.length
@@ -64,7 +66,7 @@ class Page(val page_name: String) {
             return false
         }
 
-        val props = getProps(text.substring(n, i)).toMutableMap()
+        val props = text.substring(n, i).parseToDict().toMutableMap()
 
         val title0 = props["title"] ?: ""
         val image0 = getImage(props["image"])
@@ -103,7 +105,7 @@ class Page(val page_name: String) {
 
     fun getImage(imgId: String?) = when {
         imgId.isNullOrEmpty() -> "https://picsum.photos/2560/600"
-        isFile("$staticDir/resources/image/$imgId.jpg") -> "$layer_string/resources/image/$imgId.jpg"
+        Fs.isFile("$staticDir/resources/image/$imgId.jpg") -> "$layer_string/resources/image/$imgId.jpg"
         else -> "https://picsum.photos/id/$imgId/2560/600"
     }
 
@@ -133,7 +135,7 @@ class Page(val page_name: String) {
     private fun getScope() = mapOf("site" to Site, "page" to this)
 
     private fun render() {
-        tryExec("Render($page_path, $template_path) -> $target_path") {
+        Try.exec("Render($page_path, $template_path) -> $target_path") {
             Mustache.renderToFile(template_path, getScope(), target_path)
         }
     }
@@ -142,7 +144,7 @@ class Page(val page_name: String) {
 }
 
 fun loadPages() {
-    getChildFiles(pageDir).forEach { makePage(it.substring(rootDir.length + 1)) }
+    Fs.getChildFiles(pageDir).forEach { makePage(it.substring(rootDir.length + 1)) }
 }
 
 fun makePage(path: String): Boolean {

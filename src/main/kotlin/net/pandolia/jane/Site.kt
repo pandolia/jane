@@ -5,7 +5,10 @@ import java.time.LocalDate
 import java.util.LinkedList
 
 @Suppress("unused", "PropertyName")
-class Category(val cate_name: String) { val cate_pages = LinkedList<Page>() }
+class Category(val cate_name: String) {
+    val cate_pages = LinkedList<Page>()
+    val cate_id get() = cate_name.packValue
+}
 
 object Site {
     var year = ""
@@ -39,6 +42,7 @@ object Site {
         return cateList
     }
 
+    @Suppress("unused")
     val nav_pages get() = pages.filter { !it.is_article }
 
     val development_mode = (Proc.command == "dev")
@@ -66,16 +70,16 @@ object Site {
 fun loadConfig() {
     Log.info("Jane project's root directory: $rootDir")
 
-    testDirectory(pageDir)
-    testDirectory(templateDir)
-    testDirectory(staticDir)
+    Fs.testDirectory(pageDir)
+    Fs.testDirectory(templateDir)
+    Fs.testDirectory(staticDir)
 
     reloadConfig()
 }
 
 fun reloadConfig() {
-    val props = tryExec("Read site config from ./$configFile") {
-        getPropsFromFile(configFile)
+    val props = Try.exec("Read site config from ./$configFile") {
+        Fs.getPropsFromFile(configFile)
     }
 
     Site.assignConfig(props)

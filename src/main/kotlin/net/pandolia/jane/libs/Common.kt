@@ -3,18 +3,20 @@ package net.pandolia.jane.libs
 import kotlin.system.exitProcess
 
 object Proc {
+    init {
+        System.setProperty("file.encoding", "UTF-8")
+    }
+
+    val workingDirectory = Fs.getRealPath(".")
+
     val args = System.getProperty("exec.args", "")
         .split(" ")
         .filter { it.isNotEmpty() }
         .toMutableList()
 
-    var debugMode = args.remove("-d")
+    val isDebug = args.removeAll { it == "-d" || it == "--debug" }
 
     val command = args.getOrNull(0) ?: ""
-
-    init {
-        System.setProperty("file.encoding", "UTF-8")
-    }
 
     fun exit(code: Int): Nothing = exitProcess(code)
 
@@ -22,11 +24,24 @@ object Proc {
         println("[ABORT] $msg")
         exitProcess(1)
     }
+
+    fun getArgsOption(shortName: String, name: String): String? {
+        val shortName1 = "-$shortName"
+        val name1 = "-$name"
+
+        for (i in args.size - 2 downTo 1) {
+            if (args[i] == shortName1 || args[i] == name1) {
+                return args[i + 1]
+            }
+        }
+
+        return null
+    }
 }
 
 object Log {
     fun debug(msg: String) {
-        if (!Proc.debugMode) {
+        if (!Proc.isDebug) {
             return
         }
 
@@ -40,36 +55,29 @@ object Log {
     fun warn(msg: String) {
         println("[WARN] $msg")
     }
-
-    fun error(msg: String) {
-        println("[ERROR] $msg")
-    }
 }
 
-fun <T> tryGet(msg: String, block: () -> T): T? {
-    try {
-        val result = block()
-        println("[INFO] $msg")
-        return result
-    } catch (ex: Exception) {
-        val trace = if (Proc.debugMode) "\n    ${ex.stackTrace.joinToString("\n    ")}" else  ""
-        println("[ERROR] Failed to ${msg.decapitalize()}: ${ex.javaClass.simpleName}(${ex.message})$trace")
-        return null
-    }
-}
-
-fun <T> tryExec(msg: String, block: () -> T): T {
-    return tryGet(msg, block) ?: Proc.exit(1)
-}
-
-fun getProps(input: String): Map<String, String> {
-    return input
-        .split('\n')
-        .map { it.trim() }
-        .filter { !it.startsWith('#') && it.contains(':') }
-        .map { line ->
-            val i = line.indexOf(':')
-            Pair(line.substring(0, i).trim(), line.substring(i + 1).trim())
+object Try {
+    fun <T> get(msg: String, block: () -> T): T? {
+        return try {
+            val result = block()
+            println("[INFO] $msg")
+            result
+        } catch (ex: Exception) {
+            println("[ERROR] Failed to ${msg.decapitalize()}: ${ex.detail}")
+            null
         }
-        .toMap()
+    }
+
+    fun <T> exec(msg: String, block: () -> T): T {
+        return get(msg, block) ?: Proc.exit(1)
+    }
+}
+
+val Exception.detail: String get() {
+    if (!Proc.isDebug) {
+        return "${javaClass.simpleName}(${message})"
+    }
+
+    return "${javaClass.simpleName}(${message})\n    ${stackTrace.joinToString("\n    ")}"
 }

@@ -29,9 +29,9 @@ class Watcher(
     private var lastEventTime = Date().time
 
     fun start() {
-        testDirectory(folder)
-        newThread(::watch)
-        newThread(::monitorBuffer)
+        Fs.testDirectory(folder)
+        daemonThread(::watch)
+        daemonThread(::monitorBuffer)
     }
 
     private fun mergeEventToBuffer(event: ChangeEvent) {

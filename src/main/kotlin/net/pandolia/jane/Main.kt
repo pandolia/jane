@@ -9,10 +9,22 @@ const val configFile = "site.config"
 const val footerTmplPath = "$templateDir/footer.mustache"
 const val headerTmplPath = "$templateDir/header.mustache"
 const val indexPagePath = "$pageDir/index.md"
-val rootDir = getRealPath(".")
-val buildDir = "../${rootDir.substringAfterLast('/')}-build"
+const val defaultServerPort = 80
+
+lateinit var rootDir: String
+    private set
+
+lateinit var buildDir: String
+    private set
+
+var serverPort: Int = 0
+    private set
 
 fun main() {
+    rootDir = Proc.workingDirectory
+    buildDir = "../${rootDir.substringAfterLast('/')}-build"
+    serverPort = Proc.getArgsOption("p", "port")?.toInt() ?: defaultServerPort
+
     when (Proc.command) {
         "init" -> initProject()
         "clean" -> cleanProject()
@@ -23,18 +35,18 @@ fun main() {
 }
 
 fun printUsage() {
-    println("jane init|clean|build|dev")
+    println("jane init|clean|build|dev [-d|--debug] [-p|--port 80]")
 }
 
 fun initProject() {
-    tryGet("Init a jane project in $rootDir") {
-        copyResources("/template-project", rootDir)
+    Try.get("Init a jane project in $rootDir") {
+        Fs.copyResources("/template-project", rootDir)
     }
 }
 
 fun cleanProject() {
-    tryGet("Delete directory $buildDir") {
-        deleteDirectory(buildDir)
+    Try.get("Delete directory $buildDir") {
+        Fs.deleteDirectory(buildDir)
     }
 }
 
@@ -57,27 +69,27 @@ fun developProject() {
 fun copyStatics() {
     val m = rootDir.length + 1
     val n = m + staticDir.length + 1
-    getChildFiles(staticDir)
+    Fs.getChildFiles(staticDir)
         .forEach {
             val source = it.substring(m)
             val target = "$buildDir/${it.substring(n)}"
-            copyFileIfModified(source, target)
+            Fs.copyFileIfModified(source, target)
         }
 }
 
 fun deleteExtraFiles() {
-    val n = getRealPath(buildDir).length + 1
-    getChildFiles(buildDir)
+    val n = Fs.getRealPath(buildDir).length + 1
+    Fs.getChildFiles(buildDir)
         .forEach { path ->
             val relPath = path.substring(n)
             val staticPath = "$staticDir/$relPath"
             val targetPath = "$buildDir/$relPath"
 
-            if (isFile(staticPath) || Site.pages.any { it.target_path == targetPath }) {
+            if (Fs.isFile(staticPath) || Site.pages.any { it.target_path == targetPath }) {
                 return@forEach
             }
 
-            deleteFile(path)
+            Fs.deleteFile(path)
             Log.info("Delete $path")
         }
 }

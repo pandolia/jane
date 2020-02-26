@@ -13,7 +13,7 @@ fun onChangeEvent(event: ChangeEvent) {
     val type = event.type
     val path = event.path
 
-    if (isDirectory(path) || path.endsWith('~')) {
+    if (Fs.isDirectory(path) || path.endsWith('~')) {
         return
     }
 

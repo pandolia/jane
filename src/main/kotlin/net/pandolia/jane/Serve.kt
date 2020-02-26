@@ -29,7 +29,7 @@ fun serveProject() {
 
     app.get("/*") { ctx ->
         val path = ctx.path()
-        val futrue = mainQueue.putFuture { onHttpGet(path) }
+        val futrue = Futrue { onHttpGet(path) }
         val resp = futrue.wait()
 
         ctx.result(resp.resultStream)
@@ -53,11 +53,11 @@ fun serveProject() {
         }
     }
 
-    Log.info("Start development server at http://localhost")
-    app.start(80) // TODO set port in command line
+    Log.info("Start development server at http://localhost:$serverPort/")
+    app.start(serverPort)
 
     mainQueue.onStop { app.stop() }
-    mainQueue.put { openBrowser("http://localhost") }
+    mainQueue.put { Desk.openBrowser("http://localhost:$serverPort/") }
 }
 
 fun onHttpGet(urlPath: String): Response {
@@ -87,7 +87,7 @@ fun onHttpGet0(urlPath: String): Response {
 
 fun notifyClientsToReload() {
     clients.forEach { ctx ->
-        tryGet("Notify client-${ctx.sessionId} to reload") {
+        Try.get("Notify client-${ctx.sessionId} to reload") {
             ctx.send("Reload")
         }
     }
