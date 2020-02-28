@@ -116,7 +116,7 @@ class Page(val page_name: String) {
     }
 
     private fun needRender(): Boolean {
-        if (page_name == "index") {
+        if (content_is_categories) {
             return true
         }
 
