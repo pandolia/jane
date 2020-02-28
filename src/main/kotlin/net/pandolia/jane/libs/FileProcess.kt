@@ -126,6 +126,7 @@ object Fs {
         }
     }
 
+    @Suppress("unused")
     fun deleteDirectory(directory: String): String {
         val file = File(directory)
         if (!file.exists()) {
@@ -143,7 +144,7 @@ object Fs {
         val tar = File(target)
 
         if (src.lastModified() < tar.lastModified()) {
-            Log.info("Copy $source -> $target. Skipped")
+            Log.debug("Copy $source -> $target. Skipped")
             return
         }
 

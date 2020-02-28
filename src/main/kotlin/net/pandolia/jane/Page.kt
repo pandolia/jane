@@ -38,7 +38,7 @@ class Page(val page_name: String) {
     }
 
     fun readProps(): Boolean {
-        val text = Try.get("Read $page_path") { Fs.readFile(page_path).trim() } ?: return false
+        val text = Fs.readFile(page_path).trim()
 
         val pagePropsMarker = "---"
         val n = pagePropsMarker.length
@@ -106,16 +106,7 @@ class Page(val page_name: String) {
         else -> "$layer_string/resources/image/$imgName"
     }
 
-    fun renderIfNeeded() {
-        if (!needRender()) {
-            Log.info("Render $page_path -> $target_path. Skip")
-            return
-        }
-
-        render()
-    }
-
-    private fun needRender(): Boolean {
+    fun needRender(): Boolean {
         if (content_is_categories) {
             return true
         }
@@ -131,11 +122,7 @@ class Page(val page_name: String) {
 
     private fun getScope() = mapOf("site" to Site, "page" to this)
 
-    private fun render() {
-        Try.exec("Render $page_path -> $target_path") {
-            Mustache.renderToFile(templatePath, getScope(), target_path)
-        }
-    }
+    fun render() = Mustache.renderToFile(templatePath, getScope(), target_path)
 
     fun renderToInputStream() = Mustache.renderToInputStream(templatePath, getScope())
 }
@@ -165,7 +152,17 @@ fun makePage(path: String): Boolean {
 }
 
 fun renderPages() {
-    Site.pages.forEach { it.renderIfNeeded() }
+    Log.info("")
+    Site.pages.forEach {
+        if (!it.needRender()) {
+            Log.debug("Render ${it.page_path} -> ${it.target_path}. Skip")
+            return@forEach
+        }
+
+        Try.exec("Render ${it.page_path} -> ${it.target_path}.") {
+            it.render()
+        }
+    }
 }
 
 fun deletePage(path: String): Boolean {
