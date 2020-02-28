@@ -1,5 +1,4 @@
 .idea
-blog
-blog-build
+bin
 target
 *.iml

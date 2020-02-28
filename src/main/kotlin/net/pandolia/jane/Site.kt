@@ -17,6 +17,7 @@ object Site {
     var owner_name = ""
     var owner_icp_url = ""
     var owner_icp = ""
+    var categories_page_name = ""
 
     val pages = LinkedList<Page>()
 
@@ -25,7 +26,7 @@ object Site {
         val cateList = LinkedList<Category>()
 
         pages.forEach { page ->
-            if (!page.is_article) {
+            if (page.create_date.isEmpty()) {
                 return@forEach
             }
 
@@ -43,7 +44,7 @@ object Site {
     }
 
     @Suppress("unused")
-    val nav_pages get() = pages.filter { !it.is_article }
+    val nav_pages get() = pages.filter { it.create_date.isEmpty() }
 
     val development_mode = (Proc.command == "dev")
 
@@ -52,8 +53,8 @@ object Site {
         title = props["title"] ?: "NO-TITLE"
         owner_email = props["owner_email"] ?: "NO-OWNER-EMAIL"
         owner_name = props["owner_name"] ?: "NO-OWNER-NAME"
-        owner_icp_url = props["owner_icp_url"] ?: "NO-OWNER-ICP-URL"
-        owner_icp = props["owner_icp"] ?: "NO-OWNER-ICP"
+        owner_icp_url = props["owner_icp_url"] ?: ""
+        owner_icp = props["owner_icp"] ?: ""
 
         Log.debug("""
         |    site.year: $year
@@ -69,11 +70,10 @@ object Site {
 
 fun loadConfig() {
     Log.info("Jane project's root directory: $rootDir")
-
     Fs.testDirectory(pageDir)
-    Fs.testDirectory(templateDir)
     Fs.testDirectory(staticDir)
-
+    Fs.testFile(configFile)
+    Fs.testFile(templatePath)
     reloadConfig()
 }
 

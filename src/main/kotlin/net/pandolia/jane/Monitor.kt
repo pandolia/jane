@@ -6,64 +6,60 @@ private var needReload = false
 
 fun monitorProject() {
     Log.info("Monitoring file changes in $rootDir")
-    Watcher(rootDir, ::onChangeEvent, ::onChangeEventsDone).start()
+    Watcher(rootDir, ::onDelete, ::onModify, ::onFlush).start()
 }
 
-fun onChangeEvent(event: ChangeEvent) {
-    val type = event.type
-    val path = event.path
-
-    if (Fs.isDirectory(path) || path.endsWith('~')) {
+fun onDelete(path: String) {
+    if (path.endsWith('~')) {
         return
     }
 
-    if (path == configFile) {
-        if (type == ENTRY_MODIFY) onConfigModify(path) else onConfigDelete(path)
+    Log.info("Detect file deleted: $path")
+
+    if (path == configFile || path == templatePath) {
+        Proc.exit(1)
+    }
+
+    val dir = path.substringBefore('/')
+
+    if (dir == staticDir) {
+        needReload = true
         return
     }
 
-    when (path.substringBefore('/')) {
-        pageDir -> if (type == ENTRY_MODIFY) onPageModify(path) else onPageDelete(path)
-        templateDir -> if (type == ENTRY_MODIFY) onTemplateModify(path) else onTemplateDelete(path)
-        staticDir -> needReload = true
-    }
-}
-
-fun onConfigDelete(path: String) {
-    Proc.abort("The config file $path is deleted")
-}
-
-fun onConfigModify(path: String) {
-    Log.info("The config file $path is modified")
-    reloadConfig()
-    needReload = true
-}
-
-fun onTemplateDelete(path: String) {
-    if (hasPage(path)) {
-        Proc.abort("Template $path which is needed by some pages is deleted")
-    }
-    Log.info("Template $path is deleted")
-}
-
-fun onTemplateModify(path: String) {
-    Log.info("Template $path is modified")
-    needReload = needReload || hasPage(path)
-}
-
-fun onPageDelete(path: String) {
-    if (path == indexPagePath) {
-        Proc.abort("Page $path is delete")
+    if (dir != pageDir || !path.endsWith(".md")) {
+        return
     }
 
     if (deletePage(path)) {
-        Log.info("Page $path is deleted")
         needReload = true
+        return
     }
 }
 
-fun onPageModify(path: String) {
-    Log.info("File $path is modified")
+fun onModify(path: String) {
+    if (path.endsWith('~')) {
+        return
+    }
+
+    Log.info("Detect file modified: $path")
+
+    if (path == configFile) {
+        reloadConfig()
+        needReload = true
+        return
+    }
+
+    val dir = path.substringBefore('/')
+
+    if (path == templatePath || dir == staticDir) {
+        needReload = true
+        return
+    }
+
+    if (dir != pageDir || !path.endsWith(".md")) {
+        return
+    }
 
     val page = getPage(path)
     if (page != null) {
@@ -74,11 +70,11 @@ fun onPageModify(path: String) {
     needReload = makePage(path) || needReload
 }
 
-fun onChangeEventsDone() {
+fun onFlush() {
     if (!needReload) {
         return
     }
 
-    notifyClientsToReload()
+    broadcast("reload page")
     needReload = false
 }

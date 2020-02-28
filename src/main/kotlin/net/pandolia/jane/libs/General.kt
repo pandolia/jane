@@ -1,5 +1,8 @@
 package net.pandolia.jane.libs
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.system.exitProcess
 
 object Proc {
@@ -14,28 +17,35 @@ object Proc {
         .filter { it.isNotEmpty() }
         .toMutableList()
 
+    val command = if (args.isNotEmpty()) args.removeAt(0) else ""
+
     val isDebug = args.removeAll { it == "-d" || it == "--debug" }
 
-    val command = args.getOrNull(0) ?: ""
+    val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-    fun exit(code: Int): Nothing = exitProcess(code)
+    val currentTime: String get () = LocalDateTime.now().format(dateFormatter)
 
-    fun abort(msg: String): Nothing {
-        println("[ABORT] $msg")
-        exitProcess(1)
-    }
+    val now: Long get() = Date().time
 
     fun getArgsOption(shortName: String, name: String): String? {
         val shortName1 = "-$shortName"
         val name1 = "-$name"
 
-        for (i in args.size - 2 downTo 1) {
+        for (i in args.size - 2 downTo 0) {
             if (args[i] == shortName1 || args[i] == name1) {
-                return args[i + 1]
+                args.removeAt(i)
+                return args.removeAt(i)
             }
         }
 
         return null
+    }
+
+    fun exit(code: Int): Nothing = exitProcess(code)
+
+    fun abort(msg: String): Nothing {
+        Log.log("ABORT", msg)
+        exitProcess(1)
     }
 }
 
@@ -48,12 +58,16 @@ object Log {
         println(msg.trimMargin())
     }
 
+    fun log(level: String, msg: String) {
+        println("[${Proc.currentTime}] [$level] $msg")
+    }
+
     fun info(msg: String) {
-        println("[INFO] $msg")
+        log("INFO", msg)
     }
 
     fun warn(msg: String) {
-        println("[WARN] $msg")
+        log("WARN", msg)
     }
 }
 
@@ -61,10 +75,10 @@ object Try {
     fun <T> get(msg: String, block: () -> T): T? {
         return try {
             val result = block()
-            println("[INFO] $msg")
+            Log.log("INFO", msg)
             result
         } catch (ex: Exception) {
-            println("[ERROR] Failed to ${msg.decapitalize()}: ${ex.detail}")
+            Log.log("ERROR", "Failed to ${msg.decapitalize()}: ${ex.detail}")
             null
         }
     }

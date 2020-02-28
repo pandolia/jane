@@ -19,7 +19,13 @@ fun http500(text: String) = Response(text.byteInputStream(), "text/plain; charse
 
 fun fileResponse(file: File) = Response(file.inputStream(), file.mimeType, 200)
 
-val clients = LinkedList<WsConnectContext>()
+fun jarResourceResponse(resPath: String) = Response(
+    Fs.getResourceURL(resPath).readBytes().inputStream(),
+    Fs.getMimeTypeByFileName(resPath),
+    200
+)
+
+private val clients = LinkedList<WsConnectContext>()
 
 fun serveProject() {
     System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
@@ -41,14 +47,19 @@ fun serveProject() {
         ws.onConnect { ctx ->
             mainQueue.put {
                 clients.add(ctx)
-                Log.debug("Client-${ctx.sessionId} connected")
+                Log.info("Client-${ctx.sessionId.substring(0, 4)} connected")
+                try {
+                    ctx.send("heartbeat")
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                }
             }
         }
 
         ws.onClose { ctx ->
             mainQueue.put {
                 clients.removeOne { it.sessionId == ctx.sessionId }
-                Log.debug("Client-${ctx.sessionId} disconnected")
+                Log.info("Client-${ctx.sessionId.substring(0, 4)} disconnected")
             }
         }
     }
@@ -56,11 +67,25 @@ fun serveProject() {
     Log.info("Start development server at http://localhost:$serverPort/")
     app.start(serverPort)
 
-    mainQueue.onStop { app.stop() }
-    mainQueue.put { Desk.openBrowser("http://localhost:$serverPort/") }
+    mainQueue.onStop {
+        broadcast("close page")
+        Thread.sleep(1000)
+        app.stop()
+    }
+
+    mainQueue.put {
+        Desk.openBrowser("http://localhost:$serverPort/")
+    }
+
+    newThread {
+        while (true) {
+            Thread.sleep(30000)
+            mainQueue.put { broadcast("heartbeat") }
+        }
+    }
 }
 
-fun onHttpGet(urlPath: String): Response {
+private fun onHttpGet(urlPath: String): Response {
     return try {
         onHttpGet0(urlPath)
     } catch (ex: Exception) {
@@ -68,10 +93,14 @@ fun onHttpGet(urlPath: String): Response {
     }
 }
 
-fun onHttpGet0(urlPath: String): Response {
+private fun onHttpGet0(urlPath: String): Response {
     val file = File("$staticDir$urlPath")
     if (file.isFile) {
         return fileResponse(file)
+    }
+
+    if (urlPath == "/reload.js") {
+        return jarResourceResponse("/reload.js")
     }
 
     val pageName = when  {
@@ -85,10 +114,15 @@ fun onHttpGet0(urlPath: String): Response {
     return Response(page.renderToInputStream(), "text/html; charset=utf-8", 200)
 }
 
-fun notifyClientsToReload() {
+fun broadcast(message: String) {
+    if (clients.isEmpty()) {
+        Log.info("Notify 0 client to $message")
+        return
+    }
+
     clients.forEach { ctx ->
-        Try.get("Notify client-${ctx.sessionId} to reload") {
-            ctx.send("Reload")
+        Try.get("Notify client-${ctx.sessionId.substring(0, 4)} to $message") {
+            ctx.send(message)
         }
     }
 }

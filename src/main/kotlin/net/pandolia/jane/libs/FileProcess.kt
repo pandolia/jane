@@ -88,14 +88,21 @@ object Fs {
             .collect(Collectors.toList())
     }
 
+    fun mkDir(directory: String) = File(directory).mkdir()
+
     @Suppress("unused")
     fun clearDir(directory: String, pred: (String) -> Boolean = { true }): String {
         testDirectory(directory)
 
         val path = Paths.get(directory)
 
+        val n = getRealPath(directory).length + 1
+
         Files.walk(path)
-            .filter { it.toFile().isFile && pred(it.toRealPath().toString()) }
+            .filter {
+                it.toFile().isFile
+                && pred(it.toRealPath().toString().replace('\\', '/').substring(n))
+            }
             .forEach { Files.delete(it) }
 
         Files.walk(path)
@@ -107,9 +114,15 @@ object Fs {
         return "ok"
     }
 
-    fun testDirectory(directory: String) {
-        if (!File(directory).isDirectory) {
-            throw IllegalArgumentException("$directory is not a directory")
+    fun testDirectory(path: String) {
+        if (!isDirectory(path)) {
+           throw Exception("Directory $path not exists")
+        }
+    }
+
+    fun testFile(path: String) {
+        if (!isFile(path)) {
+            throw Exception("File $path not exists")
         }
     }
 
@@ -143,9 +156,15 @@ object Fs {
 
     fun isFile(path: String) = File(path).isFile
 
+    fun exists(path: String) = File(path).exists()
+
     fun deleteFile(path: String) = File(path).delete()
 
     val mimeMap = getPropsFromResource("/mimelist")
+
+    fun getMimeTypeByFileName(resPath: String): String {
+        return mimeMap[resPath.substringAfterLast('.')] ?: "application/octet-stream"
+    }
 }
 
 val File.mimeType get() = Fs.mimeMap[extension] ?: "application/octet-stream"

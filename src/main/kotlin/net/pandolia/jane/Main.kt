@@ -4,50 +4,56 @@ import net.pandolia.jane.libs.*
 
 const val staticDir = "static"
 const val pageDir = "page"
-const val templateDir = "template"
 const val configFile = "site.config"
-const val footerTmplPath = "$templateDir/footer.mustache"
-const val headerTmplPath = "$templateDir/header.mustache"
-const val indexPagePath = "$pageDir/index.md"
+const val templatePath = "template.mustache"
+const val buildDir = "../build"
 const val defaultServerPort = 80
 
-lateinit var rootDir: String
+var rootDir = ""
     private set
 
-lateinit var buildDir: String
-    private set
-
-var serverPort: Int = 0
+var serverPort = 0
     private set
 
 fun main() {
     rootDir = Proc.workingDirectory
-    buildDir = "../${rootDir.substringAfterLast('/')}-build"
     serverPort = Proc.getArgsOption("p", "port")?.toInt() ?: defaultServerPort
 
     when (Proc.command) {
-        "init" -> initProject()
-        "clean" -> cleanProject()
-        "build" -> buildProject()
+        "create" -> createProject()
         "dev" -> developProject()
+        "build" -> buildProject()
+        "clean" -> cleanProject()
         else -> printUsage()
     }
 }
 
 fun printUsage() {
-    println("jane init|clean|build|dev [-d|--debug] [-p|--port 80]")
+    println("jane create PROJECT-NAME\njane dev|build|clean [-d|--debug] [-p|--port 80]")
 }
 
-fun initProject() {
-    Try.get("Init a jane project in $rootDir") {
-        Fs.copyResources("/template-project", rootDir)
+fun createProject() {
+    val projectName = Proc.args.firstOrNull() ?: ""
+
+    if (Fs.exists(projectName)) {
+        Proc.abort("Project $projectName already exists")
+    }
+
+    if (!Fs.mkDir(projectName)) {
+        Proc.abort("Fail to make directory $projectName")
+    }
+
+    Try.get("Create a jane project($projectName)") {
+        Fs.copyResources("/hello-jane", projectName)
     }
 }
 
-fun cleanProject() {
-    Try.get("Delete directory $buildDir") {
-        Fs.deleteDirectory(buildDir)
-    }
+fun developProject() {
+    loadConfig()
+    loadPages()
+    serveProject()
+    monitorProject()
+    startMainQueue()
 }
 
 fun buildProject() {
@@ -58,12 +64,10 @@ fun buildProject() {
     deleteExtraFiles()
 }
 
-fun developProject() {
-    loadConfig()
-    loadPages()
-    serveProject()
-    monitorProject()
-    startMainQueue()
+fun cleanProject() {
+    Try.get("Delete files in $buildDir") {
+        Fs.clearDir(buildDir) { it != "readme" }
+    }
 }
 
 fun copyStatics() {
@@ -85,7 +89,9 @@ fun deleteExtraFiles() {
             val staticPath = "$staticDir/$relPath"
             val targetPath = "$buildDir/$relPath"
 
-            if (Fs.isFile(staticPath) || Site.pages.any { it.target_path == targetPath }) {
+            if (relPath == "readme"
+                || Fs.isFile(staticPath)
+                || Site.pages.any { it.target_path == targetPath }) {
                 return@forEach
             }
 

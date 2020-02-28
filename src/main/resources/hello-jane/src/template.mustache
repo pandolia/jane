@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title }} | {{ site.title }}</title>
+    <link rel="shortcut icon" href="{{ page.layer_string }}/favicon.ico">
+    <link rel="stylesheet" href="{{ page.layer_string }}/resources/styles.css">
+</head>
+<body>
+    <div class="header">
+        <a class="logo" href="{{ page.layer_string }}/index.html"
+           style="background: url({{ page.layer_string }}/resources/logo.svg); background-size: 100% 100%"></a>
+        <div class="nav">
+        {{# site.nav_pages }}
+            <a href="{{ page.layer_string }}/{{ page_name }}.html">{{ title }}</a>
+        {{/ site.nav_pages }}
+        </div>
+    </div>
+    <div class="page-image" style="background: url({{ page.image }}) center; background-size: cover"></div>
+    {{# page.content_is_categories }}
+    <div class="main categories-page">
+        {{# site.categories }}
+        <h2 id="{{ cate_id }}">{{ cate_name }}</h2>
+        {{# cate_pages }}
+        <div><a href="{{ page.layer_string }}/{{ page_name }}.html">{{ title }}</a>{{ create_date }}</div>
+        {{/ cate_pages }}
+        {{/ site.categories }}
+    </div>
+    {{/ page.content_is_categories }}
+    {{^ page.content_is_categories }}
+    <div class="main article-page">
+        {{# page.create_date }}
+        <h1>{{ page.title }}</h1>
+        <div class="page-cate-date">
+            <a href="{{ page.layer_string }}/{{ page.category_archor }}">{{ page.category }}</a>
+            · {{ page.create_date }}
+        </div>
+        {{/ page.create_date }}
+        {{{ page.content }}}
+    </div>
+    {{/ page.content_is_categories }}
+    <div class="footer">
+        © <a href="mailto://{{ site.owner_email }}">{{ site.owner_name }}</a>
+        - <a target="_blank" href="https://jane.pandolia.net/">Jane</a>
+        - <a target="_blank" href="https://alembic.darn.es/">Alembic</a>
+        - {{ site.year }}
+        {{# site.owner_icp }}
+        - <a target="_blank" href="{{ site.owner_icp_url }}">{{ site.owner_icp }}</a>
+        {{/ site.owner_icp }}
+    </div>
+    {{# site.development_mode }}
+    <script src="/reload.js"></script>
+    {{/ site.development_mode}}
+</body>
+</html>

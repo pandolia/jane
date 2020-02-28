@@ -1,7 +1,10 @@
 package net.pandolia.jane.libs
 
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
+
+const val TICK_INTERVAL_MILLIS_SECONDS = 500L
 
 typealias Action = () -> Unit
 
@@ -9,23 +12,34 @@ private val NullAction: Action = {}
 
 class TaskQueue {
     private val queue = LinkedBlockingQueue<Action>()
-    private val queueOnStop = LinkedBlockingQueue<Action>()
+    private val stopActions = ArrayList<Action>()
+    private val tickActions = ArrayList<Action>()
 
     fun put(task: Action) {
         queue.put(task)
     }
 
-    fun onStop(task: Action) {
-        queueOnStop.put(task)
+    fun stop() = put {
+        stopActions.forEach { put(it) }
+        put(NullAction)
     }
 
-    fun stop() {
-        @Suppress("UNCHECKED_CAST")
-        queueOnStop.toArray().forEach { queue.put(it as Action) }
-        queue.put(NullAction)
+    fun onStop(task: Action) = stopActions.add(task)
+
+    fun onTick(task: Action) = tickActions.add(task)
+
+    fun tickForever() {
+        while (true) {
+            Thread.sleep(TICK_INTERVAL_MILLIS_SECONDS)
+            put {
+                tickActions.forEach { put(it) }
+            }
+        }
     }
 
     fun run() {
+        newThread(::tickForever)
+
         while (true) {
             val task = queue.take()
             if (task == NullAction) {
@@ -45,7 +59,7 @@ class TaskQueue {
 val mainQueue = TaskQueue()
 
 fun startMainQueue() {
-    daemonThread {
+    newThread {
         readLine()
         mainQueue.stop()
     }
@@ -54,7 +68,7 @@ fun startMainQueue() {
     mainQueue.run()
 }
 
-fun daemonThread(action: Action): Thread {
+fun newThread(action: Action): Thread {
     val th = Thread(action)
     th.isDaemon = true
     th.start()
