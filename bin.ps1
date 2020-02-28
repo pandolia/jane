@@ -15,7 +15,7 @@ switch ($args[0]) {
     }
 
     'package' {
-        mvn clean package
+        mvn package
         Move-Item '.\target\jane-1.0.0-jar-with-dependencies.jar' '.\bin\jane.1.0.0.jar' -Force
         return
     }

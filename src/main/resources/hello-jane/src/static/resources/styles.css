@@ -286,3 +286,11 @@ body {
     padding: 10px;
     margin: 0;
 }
+
+@media (max-width: 800px) {
+    body .main {
+        width: 90%;
+        min-height: calc(100% - 440px);
+        padding: 10px 5% 20px;
+    }
+}
