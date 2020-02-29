@@ -10,7 +10,7 @@ Jane 生成的示例博客如下：
 
 #### 安装
 
-安装 JRE/JDK 8+ ，到本项目 [Github 主页](https://github.com/pandolia/jane) 下载源码和编译好的 jar 文件，解压后，将 cd 到其中的 bin 目录，并将此目录添加至系统路径，Windows 下可手工添加，或以管理员权限运行 register-this-path.bat 文件，Linux 下以当前用户运行 source register-this-path 就可以了。之后打开一个终端，运行 jane 命令，若打印出使用信息，则表明安装成功。
+安装 JRE/JDK 8+ ，到本项目 [Github 主页](https://github.com/pandolia/jane) 下载源码和编译好的 jar 文件，解压后， cd 到其中的 bin 目录，并将此目录添加至系统路径，Windows 下可手工添加，或以管理员权限运行 register-this-path.bat 文件，Linux 下以当前用户运行 source register-this-path 就可以了。之后打开一个终端，运行 jane 命令，若打印出使用信息，则表明安装成功。
 
 #### 新建工程
 
