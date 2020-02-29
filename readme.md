@@ -10,7 +10,7 @@ Jane 生成的示例博客如下：
 
 #### 安装
 
-安装 JRE/JDK 8+ ，下载 [jane.1.0.0.zip](https://jane.pandolia.net/download/jane.1.0.0.zip)，解压后，以管理员权限运行 register-this-path.bat 将解压后的目录添加至系统路径（或手工添加），之后打开一个终端，运行 jane 命令，若打印出使用信息，则表明安装成功。
+安装 JRE/JDK 8+ ，到本项目 [Github 主页](https://github.com/pandolia/jane) 下载源码和编译好的 jar 文件，解压后，将 cd 到其中的 bin 目录，并将此目录添加至系统路径，Windows 下可手工添加，或以管理员权限运行 register-this-path.bat 文件，Linux 下以当前用户运行 source register-this-path 就可以了。之后打开一个终端，运行 jane 命令，若打印出使用信息，则表明安装成功。
 
 #### 新建工程
 
@@ -22,7 +22,7 @@ Jane 生成的示例博客如下：
 
 #### 启动开发工具
 
-cd 到 ***your-project-name/src*** 目录，运行 ***jane dev*** ，将在 80 端口启动一个开发服务器，并自动打开浏览器预览页面。如果需要使用其他端口，可以运行 ***jane dev -p 8000*** 。
+cd 到 ***your-project-name/src*** 目录，运行 ***jane dev*** ，将在 8000 端口启动一个开发服务器，并自动打开浏览器预览页面。如果需要使用其他端口，可以运行 ***jane dev -p 8080*** 。
 
 #### 编写普通文章
 
@@ -55,7 +55,7 @@ cd 到 ***your-project-name/src*** 目录，运行 ***jane dev*** ，将在 80 �
 
 文章编写完成后，在命令行窗口中敲一下回车，开发服务器将退出，同时通知浏览器关闭页面。之后，运行 ***jane build*** 命令，将 src/page 所有文章编译为 HTML 文档输出至 build 目录，同时，将 src/static 下的文件原样拷贝至 build 目录。此目录可以部署到网站的任何位置。
 
-请勿修改和删除 build 目录下的文件，下次修改文章或资源后，重新运行 jane build ，只会更新需要修改过的文件。
+请勿修改和删除 build 目录下的文件，下次修改文章或资源后，重新运行 jane build ，只会更新需要修改的文件。
 
 #### 自定义页面框架和样式
 
