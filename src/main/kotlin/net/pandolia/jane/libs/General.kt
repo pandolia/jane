@@ -27,6 +27,8 @@ object Proc {
 
     val now: Long get() = Date().time
 
+    val osName = System.getProperties().getProperty("os.name")
+
     fun getArgsOption(shortName: String, name: String): String? {
         val shortName1 = "-$shortName"
         val name1 = "-$name"
@@ -69,6 +71,10 @@ object Log {
     fun warn(msg: String) {
         log("WARN", msg)
     }
+
+    fun error(msg: String) {
+        log("ERROR", msg)
+    }
 }
 
 object Try {
@@ -78,7 +84,7 @@ object Try {
             Log.log("INFO", msg)
             result
         } catch (ex: Exception) {
-            Log.log("ERROR", "Failed to ${msg.decapitalize()}: ${ex.detail}")
+            Log.error("Failed to ${msg.decapitalize()}: ${ex.detail}")
             null
         }
     }

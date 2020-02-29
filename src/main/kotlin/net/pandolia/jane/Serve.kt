@@ -2,6 +2,8 @@ package net.pandolia.jane
 
 import io.javalin.Javalin
 import io.javalin.websocket.WsConnectContext
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
 import net.pandolia.jane.libs.*
 import java.io.File
 import java.io.InputStream
@@ -32,6 +34,15 @@ fun serveProject() {
     System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "error")
 
     val app = Javalin.create()
+
+    app.config.server {
+        val server = Server()
+        val connector = ServerConnector(server)
+        connector.host = "0.0.0.0"
+        connector.port = serverPort
+        server.connectors = arrayOf(connector)
+        server
+    }
 
     app.get("/*") { ctx ->
         val path = ctx.path()

@@ -7,7 +7,7 @@ const val pageDir = "page"
 const val configFile = "site.config"
 const val templatePath = "template.mustache"
 const val buildDir = "../build"
-const val defaultServerPort = 80
+const val defaultServerPort = 8000
 
 var rootDir = ""
     private set

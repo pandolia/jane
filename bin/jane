@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+java -Dexec.args="$*" -jar $0.1.0.0.jar

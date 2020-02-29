@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# source register-this-path
+
+export PATH=${PATH}:${PWD}
+
+echo "" >>~/.bashrc
+echo "export PATH=\${PATH}:${PWD}" >>~/.bashrc

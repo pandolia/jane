@@ -7,27 +7,57 @@ import java.util.*
 
 const val MAX_WAITE_TIME_AFTER_CHANGE = 1000
 
-class Watcher(
-    private val folder: String,
-    private val onDelete: (String) -> Unit,
-    private val onModify: (String) -> Unit,
-    private val onFlush: () -> Unit,
-    private val taskQueue: TaskQueue = mainQueue
+open class WatcherBase(
+    protected val folder: String,
+    protected val onDelete: (String) -> Unit,
+    protected val onModify: (String) -> Unit,
+    protected val onFlush: () -> Unit,
+    protected val taskQueue: TaskQueue = mainQueue
 ) {
     private val prefixLength = Fs.getRealPath(folder).length + 1
-    private var lastChangeTime = 0L
-    private val allFiles = HashSet<String>()
-    private val deletedFiles = HashSet<String>()
-    private val modifiedFiles = HashSet<String>()
+
+    protected var lastChangeTime = 0L
+    protected val deletedFiles = HashSet<String>()
+    protected val modifiedFiles = HashSet<String>()
 
     fun start() {
-        val files = Fs.getChildFiles(folder).map { it.substring(prefixLength) }
-        allFiles.addAll(files)
         taskQueue.onTick(::checkBuffer)
         newThread(::watch)
     }
 
-    private fun watch() {
+    fun trim(realPath: String) = realPath.substring(prefixLength)
+
+    protected open fun watch() { }
+
+    private fun checkBuffer() {
+        if (lastChangeTime == 0L || Proc.now - lastChangeTime < MAX_WAITE_TIME_AFTER_CHANGE) {
+            return
+        }
+
+        lastChangeTime = 0L
+        deletedFiles.forEach(onDelete)
+        modifiedFiles.forEach(onModify)
+        onFlush()
+        deletedFiles.clear()
+        modifiedFiles.clear()
+    }
+
+}
+
+class Watcher(
+
+    folder: String,
+    onDelete: (String) -> Unit,
+    onModify: (String) -> Unit,
+    onFlush: () -> Unit,
+    taskQueue: TaskQueue = mainQueue
+
+): WatcherBase(folder, onDelete, onModify, onFlush, taskQueue) {
+
+    private lateinit var allFiles: HashSet<String>
+
+    override fun watch() {
+        allFiles = HashSet(Fs.getChildFiles(folder).map { trim(it) })
         val watchService = FileSystems.getDefault().newWatchService()
         val types = arrayOf(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
         Paths.get(folder).register(watchService, types, FILE_TREE)
@@ -38,6 +68,7 @@ class Watcher(
             for (event in watchKey.pollEvents()) {
                 val path = event.context().toString().replace('\\', '/')
                 val type = event.kind()
+                Log.debug("* $type $path")
                 taskQueue.put { onChangeEvent(path, type) }
             }
 
@@ -88,22 +119,9 @@ class Watcher(
         }
 
         // a directory is created
-        val files = Fs.getChildFiles(truePath).map { it.substring(prefixLength) }
+        val files = Fs.getChildFiles(truePath).map { trim(it) }
         allFiles.addAll(files)
         modifiedFiles.addAll(files)
         deletedFiles.removeAll(files)
-    }
-
-    private fun checkBuffer() {
-        if (lastChangeTime == 0L || Proc.now - lastChangeTime < MAX_WAITE_TIME_AFTER_CHANGE) {
-            return
-        }
-
-        lastChangeTime = 0L
-        deletedFiles.forEach(onDelete)
-        modifiedFiles.forEach(onModify)
-        onFlush()
-        deletedFiles.clear()
-        modifiedFiles.clear()
     }
 }
