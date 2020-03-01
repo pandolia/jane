@@ -6,7 +6,7 @@ private var needReload = false
 
 fun monitorProject() {
     Log.info("Monitoring file changes in $rootDir")
-    watchFolder(rootDir, ::onDelete, ::onModify, ::onFlush)
+    Watcher(rootDir, ::onDelete, ::onModify, ::onFlush).start()
 }
 
 fun onDelete(path: String) {

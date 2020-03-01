@@ -6,51 +6,14 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import kotlin.collections.HashMap
 
-fun watchFolder(
-    folder: String,
-    onDelete: (String) -> Unit,
-    onModify: (String) -> Unit,
-    onFlush: () -> Unit,
-    taskQueue: TaskQueue = mainQueue
-) {
-    if (Proc.osName == "Windows") {
-        Watcher(folder, onDelete, onModify, onFlush, taskQueue).start()
-        return
-    }
-
-    WatcherForAllPlatform(folder, onDelete, onModify, onFlush, taskQueue).start()
-}
-
-class WatcherForAllPlatform(
-
-    folder: String,
-    onDelete: (String) -> Unit,
-    onModify: (String) -> Unit,
-    onFlush: () -> Unit,
-    taskQueue: TaskQueue = mainQueue
-
-): WatcherBase(folder, onDelete, onModify, onFlush, taskQueue) {
-
+class WatcherRunnerForAllPlatform(val watcher: Watcher) {
     private val watchService = FileSystems.getDefault().newWatchService()
     private val directoryTable = HashMap<WatchKey, Path>()
     private val files = HashSet<Path>()
     private val directories = HashSet<Path>()
 
-    private fun onModifyFile(file: String) {
-        lastChangeTime = Proc.now
-        deletedFiles.remove(file)
-        modifiedFiles.add(file)
-    }
-
-    private fun onDeleteFile(file: String) {
-        lastChangeTime = Proc.now
-        deletedFiles.add(file)
-        modifiedFiles.remove(file)
-    }
-    
-    override fun watch() {
-        val folderPath = Paths.get(folder)
-        registerRecursively(folderPath, false)
+    fun watch() {
+        registerRecursively(Paths.get(watcher.folder), false)
 
         while (true) {
             val key = watchService.take()
@@ -61,63 +24,65 @@ class WatcherForAllPlatform(
                 continue
             }
 
-            for (event in key.pollEvents()) {
-                val kind = event.kind()
-                @Suppress("UNCHECKED_CAST") val name = (event as WatchEvent<Path?>).context()!!
-                val entry = directory.resolve(name)
-                val relPath = trim(entry.toAbsolutePath().normalize().toString().replace('\\', '/'))
-
-                Log.debug("** $kind: $entry, $relPath, isDirectory=${Files.isDirectory(entry)}, "
-                              + "isFile=${Files.isRegularFile(entry)}")
-
-                if (kind == ENTRY_MODIFY) {
-                    if (Files.isRegularFile(entry)) {
-                        files.add(entry)
-                        taskQueue.put { onModifyFile(relPath) }
-                    }
-
-                    continue
-                }
-
-                if (kind === ENTRY_CREATE) {
-                    if (Files.isDirectory(entry)) {
-                        registerRecursively(entry, true)
-                        continue
-                    }
-
-                    if (Files.isRegularFile(entry)) {
-                        files.add(entry)
-                        taskQueue.put { onModifyFile(relPath) }
-                    }
-
-                    continue
-                }
-
-                if (directories.removeAll { it.startsWith(entry) }) {
-                    files.removeAll {
-                        if (it.startsWith(entry)) {
-                            val p = trim(it.toAbsolutePath().normalize().toString().replace('\\', '/'))
-                            taskQueue.put { onDeleteFile(p) }
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    continue
-                }
-
-                if (files.remove(entry)) {
-                    taskQueue.put { onDeleteFile(relPath) }
-                }
-            }
+            key.pollEvents().forEach { processEvent(directory, it) }
 
             if (!key.reset()) {
+                // Log.debug("Remove $directory from monitor list")
                 directoryTable.remove(key)
                 if (directoryTable.isEmpty()) {
-                    Log.warn("Watch loop is stopped")
+                    Log.warn("Watcher for ${watcher.folder} is stopped")
                     break
                 }
             }
+        }
+    }
+
+    private fun processEvent(directory: Path, event: WatchEvent<*>) {
+        val kind = event.kind()
+        val entry = directory.resolve(event.context().toString())
+        val isDirectory = Files.isDirectory(entry)
+        val isFile = Files.isRegularFile(entry)
+
+        // Log.debug("$kind: ${watcher.trim(entry)}, isDirectory=$isDirectory, isFile=$isFile")
+
+        if (kind == ENTRY_MODIFY) {
+            if (isFile) {
+                files.add(entry)
+                watcher.put(MODIFY, entry)
+            }
+
+            return
+        }
+
+        if (kind === ENTRY_CREATE) {
+            if (isDirectory) {
+                registerRecursively(entry, true)
+                return
+            }
+
+            if (isFile) {
+                files.add(entry)
+                watcher.put(MODIFY, entry)
+            }
+
+            return
+        }
+
+        if (directories.removeAll { it.startsWith(entry) }) {
+            files.removeAll {
+                if (it.startsWith(entry)) {
+                    watcher.put(DELETE, it)
+                    return@removeAll true
+                }
+
+                return@removeAll false
+            }
+
+            return
+        }
+
+        if (files.remove(entry)) {
+            watcher.put(DELETE, entry)
         }
     }
 
@@ -125,6 +90,7 @@ class WatcherForAllPlatform(
         Files.walkFileTree(folder, object : SimpleFileVisitor<Path>() {
 
             override fun preVisitDirectory(directory: Path, attrs: BasicFileAttributes): FileVisitResult {
+                // Log.debug("Add $directory to monitor list")
                 directories.add(directory)
                 val key = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
                 directoryTable[key] = directory
@@ -134,8 +100,7 @@ class WatcherForAllPlatform(
             override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                 files.add(file)
                 if (isFolderNewlyCreated) {
-                    val relPath = trim(file.toRealPath().toString().replace('\\', '/'))
-                    taskQueue.put { onModifyFile(relPath) }
+                    watcher.put(MODIFY, file)
                 }
                 return FileVisitResult.CONTINUE
             }
