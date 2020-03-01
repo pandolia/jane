@@ -88,6 +88,12 @@ object Fs {
             .collect(Collectors.toList())
     }
 
+    fun getChildFiles(directory: Path): List<Path> {
+        return Files.walk(directory)
+            .filter { Files.isRegularFile(it) }
+            .collect(Collectors.toList())
+    }
+
     fun mkDir(directory: String) = File(directory).mkdir()
 
     @Suppress("unused")

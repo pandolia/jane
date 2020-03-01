@@ -27,7 +27,7 @@ object Proc {
 
     val now: Long get() = Date().time
 
-    val osName = System.getProperties().getProperty("os.name")
+    // val osName: String = System.getProperties().getProperty("os.name")
 
     fun getArgsOption(shortName: String, name: String): String? {
         val shortName1 = "-$shortName"
