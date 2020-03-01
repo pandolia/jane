@@ -2,32 +2,21 @@ package net.pandolia.jane.libs
 
 import java.io.File
 import java.io.FileNotFoundException
-import java.net.URL
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.stream.Collectors
 
 object Fs {
-    fun readFile(filename: String): String {
-        return File(filename).readText()
-    }
+    fun readFile(filename: String) = File(filename).readText()
 
-    fun getPropsFromFile(filename: String): Map<String, String> {
-        return readFile(filename).parseToDict()
-    }
+    fun getPropsFromFile(filename: String) = readFile(filename).parseToDict()
 
-    fun getPropsFromResource(resName: String): Map<String, String> {
-        return readResourceFile(resName).parseToDict()
-    }
+    fun getPropsFromResource(resName: String) = readResourceFile(resName).parseToDict()
 
-    fun getResourceURL(resPath: String): URL {
-        return (object {}).javaClass.getResource(resPath)
-            ?: throw FileNotFoundException("Resource:$resPath")
-    }
+    fun getResourceURL(resPath: String) = Fs.javaClass.getResource(resPath)
+        ?: throw FileNotFoundException("Resource:$resPath")
 
-    fun readResourceFile(resPath: String): String {
-        return getResourceURL(resPath).readText()
-    }
+    fun readResourceFile(resPath: String) = getResourceURL(resPath).readText()
 
     fun copyResources(resDir: String, tarDir: String): String {
         val tarFile = File(tarDir)
@@ -75,9 +64,7 @@ object Fs {
         return  "ok"
     }
 
-    fun getRealPath(p: String): String {
-        return Paths.get(p).toRealPath().toString().replace('\\', '/')
-    }
+    fun getRealPath(p: String) = Paths.get(p).toRealPath().toString().replace('\\', '/')
 
     fun getChildFiles(directory: String): List<String> {
         testDirectory(directory)
@@ -96,7 +83,6 @@ object Fs {
 
     fun mkDir(directory: String) = File(directory).mkdir()
 
-    @Suppress("unused")
     fun clearDir(directory: String, pred: (String) -> Boolean = { true }): String {
         testDirectory(directory)
 

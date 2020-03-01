@@ -57,7 +57,7 @@ class Watcher(
 
 private class WatcherRunner(
     val folderPath: Path,
-    val put: (FileChangeType, String) -> Unit
+    val onChange: (FileChangeType, String) -> Unit
 ) {
 
     private val prefixLength = folderPath.toRealPath().toString().length + 1
@@ -126,7 +126,7 @@ private class WatcherRunner(
 
         if (isFile) {
             allFiles.add(path)
-            put(MODIFY, path)
+            onChange(MODIFY, path)
             return
         }
 
@@ -144,7 +144,7 @@ private class WatcherRunner(
                 .map { trim(it) }
                 .forEach {
                     allFiles.add(it)
-                    put(MODIFY, it)
+                    onChange(MODIFY, it)
                 }
 
             return
@@ -158,7 +158,7 @@ private class WatcherRunner(
 
         allFiles.removeAll {
             if (it == path || it.startsWith(path1)) {
-                put(DELETE, it)
+                onChange(DELETE, it)
                 return@removeAll true
             }
 
@@ -177,7 +177,7 @@ private class WatcherRunner(
                 if (dirIsNewlyCreate) {
                     val path = trim(file)
                     allFiles.add(path)
-                    put(MODIFY, path)
+                    onChange(MODIFY, path)
                 }
                 return FileVisitResult.CONTINUE
             }

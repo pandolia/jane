@@ -5,7 +5,6 @@ import net.pandolia.jane.libs.*
 private var needReload = false
 
 fun monitorProject() {
-    Log.info("Monitoring file changes in $rootDir")
     Watcher(rootDir, ::onDelete, ::onModify, ::onFlush).start()
 }
 
