@@ -23,7 +23,7 @@ object Proc {
 
     val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-    val currentTime: String get () = LocalDateTime.now().format(dateFormatter)
+    val currentTime: String get() = LocalDateTime.now().format(dateFormatter)
 
     val now: Long get() = Date().time
 
@@ -94,10 +94,9 @@ object Try {
     }
 }
 
-val Exception.detail: String get() {
-    if (!Proc.isDebug) {
-        return "${javaClass.simpleName}(${message})"
+val Exception.detail: String
+    get() = if (!Proc.isDebug) {
+        "${javaClass.simpleName}(${message})"
+    } else {
+        "${javaClass.simpleName}(${message})\n    ${stackTrace.joinToString("\n    ")}"
     }
-
-    return "${javaClass.simpleName}(${message})\n    ${stackTrace.joinToString("\n    ")}"
-}

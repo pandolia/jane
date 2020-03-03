@@ -22,29 +22,31 @@ object Site {
     val pages = LinkedList<Page>()
 
     @Suppress("unused")
-    val categories: LinkedList<Category> get() {
-        val cateList = LinkedList<Category>()
+    val categories: LinkedList<Category>
+        get() {
+            val cateList = LinkedList<Category>()
 
-        pages.forEach { page ->
-            if (page.create_date.isEmpty()) {
-                return@forEach
+            pages.forEach { page ->
+                if (page.create_date.isEmpty()) {
+                    return@forEach
+                }
+
+                var cate = cateList.find { it.cate_name == page.category }
+                if (cate == null) {
+                    cate = Category(page.category)
+                    cateList.add(cate)
+                }
+
+                cate.cate_pages.addFirst(page)
             }
 
-            var cate = cateList.find { it.cate_name == page.category }
-            if (cate == null) {
-                cate = Category(page.category)
-                cateList.add(cate)
-            }
-
-            cate.cate_pages.addFirst(page)
+            cateList.sortByDescending { it.cate_pages.count() }
+            return cateList
         }
 
-        cateList.sortByDescending { it.cate_pages.count() }
-        return cateList
-    }
-
     @Suppress("unused")
-    val nav_pages get() = pages.filter { it.create_date.isEmpty() }
+    val nav_pages
+        get() = pages.filter { it.create_date.isEmpty() }
 
     val development_mode = (Proc.command == "dev")
 

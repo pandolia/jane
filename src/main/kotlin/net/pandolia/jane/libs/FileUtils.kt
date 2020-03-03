@@ -61,7 +61,7 @@ object Fs {
             }
         })
 
-        return  "ok"
+        return "ok"
     }
 
     fun getRealPath(p: String) = Paths.get(p).toRealPath().toString().replace('\\', '/')
@@ -92,8 +92,7 @@ object Fs {
 
         Files.walk(path)
             .filter {
-                it.toFile().isFile
-                && pred(it.toRealPath().toString().replace('\\', '/').substring(n))
+                it.toFile().isFile && pred(it.toRealPath().toString().replace('\\', '/').substring(n))
             }
             .forEach { Files.delete(it) }
 
@@ -108,7 +107,7 @@ object Fs {
 
     fun testDirectory(path: String) {
         if (!isDirectory(path)) {
-           throw Exception("Directory $path not exists")
+            throw Exception("Directory $path not exists")
         }
     }
 
