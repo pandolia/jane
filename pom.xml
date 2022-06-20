@@ -10,7 +10,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <kotlin.version>1.3.61</kotlin.version>
+        <kotlin.version>1.6.0</kotlin.version>
         <junit.version>4.12</junit.version>
         <javalin.version>3.5.0</javalin.version>
         <mustache.version>0.9.6</mustache.version>
