@@ -12,14 +12,13 @@ object Proc {
 
     val workingDirectory = Fs.getRealPath(".")
 
-    val args = System.getProperty("exec.args", "")
-        .split(" ")
-        .filter { it.isNotEmpty() }
-        .toMutableList()
+    val args = System.getProperty("exec.args", "").split(" ").filter { it.isNotEmpty() }
 
-    val command = if (args.isNotEmpty()) args.removeAt(0) else ""
+    val command = args.firstOrNull()
 
-    val isDebug = args.removeAll { it == "-d" || it == "--debug" }
+    val subCommand = args.getOrNull(1)
+
+    val isDebug = hasOption("-d", "--debug")
 
     val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -27,19 +26,17 @@ object Proc {
 
     val now: Long get() = Date().time
 
-    // val osName: String = System.getProperties().getProperty("os.name")
+    @Suppress("unused")
+    val osName: String = System.getProperties().getProperty("os.name")
 
-    fun getArgsOption(shortName: String, name: String): String? {
-        val shortName1 = "-$shortName"
-        val name1 = "-$name"
+    fun hasOption(vararg names: String) = args.any { it in names }
 
-        for (i in args.size - 2 downTo 0) {
-            if (args[i] == shortName1 || args[i] == name1) {
-                args.removeAt(i)
-                return args.removeAt(i)
+    fun getOption(vararg names: String): String? {
+        for ( i in args.size - 2 downTo 0) {
+            if (args[i] in names) {
+                return args[i + 1]
             }
         }
-
         return null
     }
 

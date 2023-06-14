@@ -12,6 +12,7 @@ fun <T> MutableList<T>.removeOne(pred: (T) -> Boolean): Boolean {
     return false
 }
 
+@Suppress("unused")
 fun <T> MutableList<T>.uniqAdd(e: T, pred: (T, T) -> Boolean) {
     val it = iterator()
     while (it.hasNext()) {

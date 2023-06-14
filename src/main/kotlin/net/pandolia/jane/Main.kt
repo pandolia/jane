@@ -17,7 +17,7 @@ var serverPort = 0
 
 fun main() {
     rootDir = Proc.workingDirectory
-    serverPort = Proc.getArgsOption("p", "port")?.toInt() ?: defaultServerPort
+    serverPort = Proc.getOption("-p", "--port")?.toInt() ?: defaultServerPort
 
     when (Proc.command) {
         "create" -> createProject()
@@ -29,11 +29,17 @@ fun main() {
 }
 
 fun printUsage() {
-    println("jane create PROJECT-NAME\njane dev|build|clean [-d|--debug] [-p|--port 80]")
+    println("jane create \$project_name")
+    println("jane dev|build|clean [-d|--debug] [-p|--port 8000] [-wd|--working-directory .]")
 }
 
 fun createProject() {
-    val projectName = Proc.args.firstOrNull() ?: ""
+    val projectName = Proc.subCommand
+
+    if (projectName == null) {
+        printUsage()
+        Proc.exit(1)
+    }
 
     if (Fs.exists(projectName)) {
         Proc.abort("Project $projectName already exists")

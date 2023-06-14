@@ -50,12 +50,7 @@ jane.onMessage = function (event) {
 };
 
 jane.onDisconnect = function () {
-    if (jane.closed) {
-        return;
-    }
-
-    console.log(jane.getTime() + " connection has broken. reconnecting to the server...");
-    jane.connect();
+    jane.close("Connetction with the development websocked server has broken");
 };
 
 jane.onError = function() {
